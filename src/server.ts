@@ -9,6 +9,7 @@ import { createTraceManager } from "./traces.js";
 import { createAdminRouter } from "./routes/admin/index.js";
 import { createProxyRouter } from "./routes/proxy/index.js";
 import { installResponsesWebsocketProxy } from "./websocket-responses.js";
+import { startUsageExporter } from "./usage-exporter.js";
 import { oauthConfig } from "./oauth-config.js";
 import {
   ADMIN_TOKEN,
@@ -180,6 +181,14 @@ function clearAdminSession(req: express.Request, res: express.Response) {
     path: "/",
   });
 }
+
+startUsageExporter({
+  store,
+  oauthConfig,
+  openaiBaseUrl: CHATGPT_BASE_URL,
+  mistralBaseUrl: MISTRAL_BASE_URL,
+  zaiBaseUrl: ZAI_BASE_URL,
+});
 
 function adminGuard(
   req: express.Request,
