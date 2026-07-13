@@ -60,6 +60,7 @@ import {
   extractUsageFromPayload,
   getSessionId,
   inspectAssistantPayload,
+  moveSystemMessagesToInstructions,
   normalizeResponsesPayload,
   responsesToChatCompletionsPayload,
   sanitizeGenericChatCompletionsPayload,
@@ -1717,6 +1718,14 @@ export function createProxyRouter(options: ProxyRoutesOptions) {
           typeof payloadToUpstream === "object"
         ) {
           delete payloadToUpstream.store;
+        }
+        if (
+          candidate.provider === "openai" &&
+          !shouldSendChatCompletions &&
+          payloadToUpstream &&
+          typeof payloadToUpstream === "object"
+        ) {
+          payloadToUpstream = moveSystemMessagesToInstructions(payloadToUpstream);
         }
         if (candidate.resolvedModel && candidate.resolvedModel !== candidate.requestedModel)
           payloadToUpstream.model = candidate.resolvedModel;

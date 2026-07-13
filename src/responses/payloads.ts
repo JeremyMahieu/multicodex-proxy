@@ -137,6 +137,52 @@ export function normalizeResponsesPayload(body: any, sessionId?: string) {
   return b;
 }
 
+function inputContentToInstructionText(content: any): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part: any) => {
+        if (typeof part === "string") return part;
+        if (typeof part?.text === "string") return part.text;
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  return "";
+}
+
+export function moveSystemMessagesToInstructions(payload: any) {
+  if (!payload || typeof payload !== "object") return payload;
+
+  const collectedSystemMessages: string[] = [];
+  const instructions =
+    typeof payload.instructions === "string" ? payload.instructions.trim() : "";
+
+  const input = Array.isArray(payload.input) ? payload.input : [];
+  const nextInput: any[] = [];
+  for (const item of input) {
+    if (item?.role === "system") {
+      const text = inputContentToInstructionText(item.content).trim();
+      if (text) collectedSystemMessages.push(text);
+      continue;
+    }
+    nextInput.push(item);
+  }
+
+  if (collectedSystemMessages.length > 0) {
+    payload.instructions = [instructions, ...collectedSystemMessages]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
+  if (nextInput.length === 0) {
+    nextInput.push({ role: "user", content: [{ type: "input_text", text: "" }] });
+  }
+  payload.input = nextInput;
+  return payload;
+}
+
 export function chatCompletionsToResponsesPayload(
   body: any,
   sessionId?: string,
